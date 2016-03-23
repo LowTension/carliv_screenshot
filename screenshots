@@ -1,0 +1,291 @@
+#!/bin/bash
+# Take phone screenshots (android OS or recovery) from linux.
+# 
+e="\x1b[";c=$e"39;49;00m";y=$e"93;01m";cy=$e"96;01m";r=$e"1;91m";
+##########################################################
+#                                                        #
+#           Android Screenshooter (fb2png)               #
+#          by Kyan He (kyan.ql.he@gmail.com)             #
+#    Maintained by Phil3759 & McKael @ xda-developers    #
+#          Original script for windows (batch)           #
+#              by majdinj @ xda-developers               #
+#       rewritten for linux as shell script (bash)       #
+#                by carliv @ xda-developers              #
+#                                                        #
+##########################################################
+bin="$PWD/.bin";
+chmod -R 755 "$bin"/*;
+adb=$bin/adb;
+cd "$PWD";
+
+pause()
+{
+read -s -n 1 -p "Press any key to continue...";
+}
+
+wrong()
+{
+echo -e "$y You typed $env - invalid option! Please try again$c";
+pause;
+main;
+}
+
+awrong()
+{
+echo -e "$y You typed $aenv - invalid option! Please try again$c";
+pause;
+android;
+}
+
+rwrong()
+{
+echo -e "$y You typed $renv - invalid option! Please try again$c";
+pause;
+recovery;
+}
+
+recovery()
+{
+clear;
+$adb devices;
+$adb push $bin/fb2png /tmp/ > /dev/null 2>&1;
+$adb shell chmod 755 /tmp/fb2png;
+###########################################################
+echo -e "
+**********************************************************
+*                                                        *
+*          $cy Android Screenshooter$c (fb2png)               *
+*          by$y Kyan He$c (kyan.ql.he@gmail.com)             *
+*    Maintained by$y Phil3759$c &$y McKael$c @$y xda-developers$c    *
+*          Original script for windows (batch)           *
+*              by$y majdinj$c @$y xda-developers$c               *
+*       rewritten for linux as shell script (bash)       *
+*                by$cy carliv$c @$y xda-developers$c              *
+*                                                        *
+********************************************************** 
+";     
+###########################################################
+echo " ";
+echo "][************************][";
+echo -e "][       $cy RECOVERY$c        ][";
+echo "][************************][";
+echo -e "][$cy S.   Take screenshot$c   ][";
+echo "][************************][";
+echo -e "][$r E.   Exit$c              ][";
+echo "][************************][";
+echo -e "][ Q.   Quit              ][";
+echo "][************************][";
+echo " ";
+printf %s "Type your option [S,E,Q] then press ENTER: ";
+read renv;
+case $renv in
+ s|S) recovery_screenshot;;
+ e|E) recovery_exit;;
+ q|Q) quit;;
+ *) rwrong;;
+esac
+}
+
+recovery_screenshot() 
+{
+img=$(date +"%d_%H%M%S");
+rimg=recscreen_$img.png;	
+folder=recovery_$(date +"%Y_%m_%d");
+mkdir -p $folder;
+screenshot=$folder/$rimg; 
+$adb shell "/tmp/fb2png /tmp/fbdump.png > /tmp/info; head -n 20 /tmp/info | tail -n 13; rm -f /tmp/info";
+echo " ";
+echo -e "$cy Pulling Screenshot file$c";
+echo " ";
+$adb pull /tmp/fbdump.png $screenshot;
+$adb shell "rm -f /tmp/fbdump.png";
+echo " ";
+echo -e "Done!$cy $rimg$c saved in$cy $folder$c folder";
+echo " ";
+pause;
+recovery;
+}
+
+recovery_exit() 
+{	 
+$adb shell rm -f /tmp/fb2png;
+clear;
+main; 
+}
+
+android()
+{
+clear;
+$adb devices;
+$adb shell mkdir -p /sdcard/Screenshots;
+###########################################################
+echo -e "
+**********************************************************
+*                                                        *
+*          $cy Android Screenshooter$c (fb2png)               *
+*          by$y Kyan He$c (kyan.ql.he@gmail.com)             *
+*    Maintained by$y Phil3759$c &$y McKael$c @$y xda-developers$c    *
+*          Original script for windows (batch)           *
+*              by$y majdinj$c @$y xda-developers$c               *
+*       rewritten for linux as shell script (bash)       *
+*                by$cy carliv$c @$y xda-developers$c              *
+*                                                        *
+********************************************************** 
+";     
+###########################################################
+echo " ";
+echo "][************************][";
+echo -e "][       $y ANDROID$c         ][";
+echo "][************************][";
+echo -e "][$y S.   Take screenshot$c   ][";
+echo "][************************][";
+echo -e "][$r E.   Exit$c              ][";
+echo "][************************][";
+echo -e "][ Q.   Quit              ][";
+echo "][************************][";
+echo " ";
+printf %s "Type your option [S,E,Q] then press ENTER: ";
+read aenv;
+case $aenv in
+ s|S) android_screenshot;;
+ e|E) android_exit;;
+ q|Q) quit;;
+ *) awrong;;
+esac
+}
+
+android_screenshot() 
+{
+img=$(date +"%d_%H%M%S");
+aimg=andscreen_$img.png;	
+folder=android_$(date +"%Y_%m_%d");
+mkdir -p $folder;
+screenshot=$folder/$aimg;
+$adb shell "screencap -p /sdcard/Screenshots/screenos.png" > /dev/null 2>&1;
+echo " ";
+echo -e "$y Pulling Screenshot file$c";
+echo " ";
+$adb pull /sdcard/Screenshots/screenos.png $screenshot;
+$adb shell rm /sdcard/Screenshots/screenos.png;
+echo " ";
+echo -e "Done!$y $aimg$c saved in$y $folder$c folder";
+echo " ";
+pause;
+android;
+}
+
+android_exit() 
+{
+$adb shell "rm -rf /sdcard/Screenshots";	 
+clear;
+main;
+}
+
+noadb()
+{
+echo " ";
+echo " ";
+echo -e "$r No device connected through ADB! First connect your phone to PC, then run this program again. ERROR!$c";
+read -s -n 1 -p "Press any key to exit...";
+quit;	
+}
+
+quit() 
+{	 
+$adb kill-server > /dev/null 2>&1;
+clear; 
+exit;
+}
+
+adb_reboot_rec()
+{
+echo -e "$cy Rebooting to recovery... $c";
+$adb reboot recovery;
+pause;
+main;	
+}
+
+adb_reboot()
+{
+echo -e "$y Rebooting to android... $c";
+$adb reboot;
+pause;
+main;	
+}
+
+check_adb() 
+{
+checked=1;	
+$adb start-server > /dev/null 2>&1;	
+noconnect="unknown";
+is_adb="$($adb get-state | sed 's/ *$//g')";
+if [[ ${is_adb} == ${noconnect} ]]; 
+	then
+		noadb;
+	else
+		main;
+fi;
+}
+
+main()
+{
+clear;
+$adb devices;
+$adb get-state;
+echo " ";
+###########################################################
+echo -e "
+**********************************************************
+*                                                        *
+*          $cy Android Screenshooter$c (fb2png)               *
+*          by$y Kyan He$c (kyan.ql.he@gmail.com)             *
+*    Maintained by$y Phil3759$c &$y McKael$c @$y xda-developers$c    *
+*          Original script for windows (batch)           *
+*              by$y majdinj$c @$y xda-developers$c               *
+*       rewritten for linux as shell script (bash)       *
+*                by$cy carliv$c @$y xda-developers$c              *
+*                                                        *
+********************************************************** 
+";     
+###########################################################
+echo " ";
+echo "  Choose what kind of screenshot do you need to take.";
+echo " ";
+echo "][************************][";
+echo -e "][$cy R.  RECOVERY$c           ][";
+echo "][************************][";
+echo -e "][$y A.  ANDROID$c            ][";
+echo "][************************][";
+echo -e "][$r E.  EXIT$c               ][";
+echo "][************************][";
+echo "][************************][";
+echo -e "][$cy 0.  Reboot to recovery$c ][";
+echo "][************************][";
+echo -e "][$y 1.  Reboot to Android$c  ][";
+echo "][************************][";
+echo " ";
+printf %s "Type your option [R,A,E,0,1] then press ENTER: ";
+read env;
+case $env in
+ r|R) recovery;;
+ a|A) android;;
+ e|E) quit;;
+ 0) adb_reboot_rec;;
+ 1) adb_reboot;;
+ *) wrong;;
+esac
+}
+
+if [[ "$checked" -ne "1" ]]
+then
+	check_adb;
+while :
+do
+	check_adb;
+done
+fi;
+
+while :
+do
+	main;
+done
